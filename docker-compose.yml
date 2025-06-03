@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:5
+    container_name: mongodb
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=notabene
+
+  notabene-app:
+    build:
+      context: .
+      dockerfile: src/main/docker/Dockerfile
+    image: notabene-app
+    container_name: notabene-app
+    depends_on:
+      - mongodb
+    ports:
+      - '8080:8080'
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/notabene
+
+volumes:
+  mongodb_data:
