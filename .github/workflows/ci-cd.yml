@@ -86,7 +86,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t $DOCKER_IMAGE:${{ github.sha }} .
+          docker build -t $DOCKER_IMAGE:${{ github.sha }} -f src/main/docker/Dockerfile .
           docker tag $DOCKER_IMAGE:${{ github.sha }} $DOCKER_IMAGE:latest
 
       - name: Login to DockerHub
