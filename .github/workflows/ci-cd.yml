@@ -66,6 +66,9 @@ jobs:
             node_modules
           key: npm-${{ hashFiles('**/package-lock.json') }}
 
+      - name: Make Maven wrapper executable
+        run: chmod +x ./mvnw
+
       - name: Install dependencies
         run: |
           npm install
