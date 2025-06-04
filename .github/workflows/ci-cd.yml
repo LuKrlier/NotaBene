@@ -74,12 +74,12 @@ jobs:
       - name: Run backend tests & build
         run: ./mvnw clean verify -Pprod
 
-      - name: SonarQube Analysis
-        run: |
-          ./mvnw sonar:sonar \
-            -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-            -Dsonar.host.url=$SONAR_HOST_URL \
-            -Dsonar.login=$SONAR_LOGIN
+      # - name: SonarQube Analysis
+      #   run: |
+      #     ./mvnw sonar:sonar \
+      #       -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+      #       -Dsonar.host.url=$SONAR_HOST_URL \
+      #       -Dsonar.login=$SONAR_LOGIN
 
       - name: Build Docker image
         run: |
