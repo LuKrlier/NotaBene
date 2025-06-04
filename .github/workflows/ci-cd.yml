@@ -13,7 +13,7 @@ jobs:
       SONAR_HOST_URL: http://localhost:9001
       SONAR_PROJECT_KEY: NotaBene
       SONAR_LOGIN: ${{ secrets.SONAR_TOKEN }}
-      DOCKER_IMAGE: yourdockerhubusername/notabene
+      DOCKER_IMAGE: buck2412/notabene
       REGISTRY_USER: ${{ secrets.DOCKERHUB_USERNAME }}
       REGISTRY_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
 
