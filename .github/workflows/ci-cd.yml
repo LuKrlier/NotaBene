@@ -23,19 +23,19 @@ jobs:
         ports:
           - 27017:27017
 
-      sonarqube:
-        image: sonarqube:9.9-community
-        ports:
-          - 9001:9000
-        env:
-          SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: true
-        options: >-
-          --health-cmd="curl -f http://localhost:9000/api/system/status || exit 1"
-          --health-interval=20s
-          --health-timeout=10s
-          --health-retries=3
-          -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
-          --memory=4096M
+      # sonarqube:
+      #   image: sonarqube:9.9-community
+      #   ports:
+      #     - 9001:9000
+      #   env:
+      #     SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: true
+      #   options: >-
+      #     --health-cmd="curl -f http://localhost:9000/api/system/status || exit 1"
+      #     --health-interval=20s
+      #     --health-timeout=10s
+      #     --health-retries=3
+      #     -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+      #     --memory=4096M
 
     steps:
       - name: Checkout repository
