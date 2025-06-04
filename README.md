@@ -1,260 +1,211 @@
-# NotaBene
+# 📝 NotaBene
 
-This application was generated using JHipster 8.11.0, you can find documentation and help at [https://www.jhipster.tech/documentation-archive/v8.11.0](https://www.jhipster.tech/documentation-archive/v8.11.0).
+> Une application légère, rapide et réactive pour gérer ses notes efficacement, où que vous soyez.
 
-## Project Structure
+---
 
-Node is required for generation and recommended for development. `package.json` is always generated for a better development experience with prettier, commit hooks, scripts and so on.
+## 🚀 Présentation
 
-In the project root, JHipster generates configuration files for tools like git, prettier, eslint, husky, and others that are well known and you can find references in the web.
+**NotaBene** est une application web full-stack conçue pour créer, organiser et gérer des notes personnelles de manière fluide et sécurisée. Elle est construite avec une architecture réactive (Spring WebFlux) et une interface simple basée sur Vue.js 2. Le tout est conteneurisé avec Docker pour une portabilité maximale.
 
-`/src/*` structure follows default Java structure.
+---
 
-- `.yo-rc.json` - Yeoman configuration file
-  JHipster configuration is stored in this file at `generator-jhipster` key. You may find `generator-jhipster-*` for specific blueprints configuration.
-- `.yo-resolve` (optional) - Yeoman conflict resolver
-  Allows to use a specific action when conflicts are found skipping prompts for files that matches a pattern. Each line should match `[pattern] [action]` with pattern been a [Minimatch](https://github.com/isaacs/minimatch#minimatch) pattern and action been one of skip (default if omitted) or force. Lines starting with `#` are considered comments and are ignored.
-- `.jhipster/*.json` - JHipster entity configuration files
+## 🧰 Stack Technique
 
-- `npmw` - wrapper to use locally installed npm.
-  JHipster installs Node and npm locally using the build tool by default. This wrapper makes sure npm is installed locally and uses it avoiding some differences different versions can cause. By using `./npmw` instead of the traditional `npm` you can configure a Node-less environment to develop or test your application.
-- `/src/main/docker` - Docker configurations for the application and services that the application depends on
+| Layer            | Technologie               |
+| ---------------- | ------------------------- |
+| Frontend         | Vue.js 2 + Element UI     |
+| Backend          | Spring WebFlux (Reactive) |
+| Base de données  | MongoDB (NoSQL)           |
+| CI/CD            | GitHub Actions            |
+| Tests            | JUnit 5, Cypress (E2E)    |
+| Authentification | Spring Security + JWT     |
+| Conteneurs       | Docker                    |
+| DevTools         | GitLens, Volar, ESLint    |
 
-## Development
+---
 
-The build system will install automatically the recommended version of Node and npm.
+## 📦 Fonctionnalités
 
-We provide a wrapper to launch npm.
-You will only need to run this command when dependencies change in [package.json](package.json).
+### 🔐 Authentification & Sécurité
 
-```
-./npmw install
-```
+- Connexion / inscription via email
+- JWT + Spring Security
+- Rôles (admin / user)
+- Support internationalisation (i18n) – 🇫🇷/🇬🇧 prêt
 
-We use npm scripts and [Vite][] as our build system.
+### 📝 Gestion des notes
 
-Run the following commands in two separate terminals to create a blissful development experience where your browser
-auto-refreshes when files change on your hard drive.
+- CRUD de notes (titre, contenu, tags, date)
+- Notes privées par utilisateur
+- Recherche par mot-clé
+- Notes triables et filtrables
 
-```
-./mvnw
-./npmw start
-```
+### ⚙️ Administration
 
-Npm is also used to manage CSS and JavaScript dependencies used in this application. You can upgrade dependencies by
-specifying a newer version in [package.json](package.json). You can also run `./npmw update` and `./npmw install` to manage dependencies.
-Add the `help` flag on any command to see how you can use it. For example, `./npmw help update`.
+- Interface admin auto-générée
+- Dashboard utilisateur
+- Gestion des comptes
+- Journalisation des événements (optionnelle via Audit logs)
 
-The `./npmw run` command will list all the scripts available to run for this project.
+### 📊 Outils & DevOps
 
-### PWA Support
+- GitHub Actions pour build/test/deploy
+- Conteneurs Docker individuels pour chaque service
+- Fichiers `docker-compose.yml` pour un setup local simple
+- Monitoring (optionnel) : Prometheus / Grafana (étape avancée)
 
-JHipster ships with PWA (Progressive Web App) support, and it's turned off by default. One of the main components of a PWA is a service worker.
+---
 
-The service worker initialization code is commented out by default. To enable it, uncomment the following code in `src/main/webapp/index.html`:
+## 🛠️ Installation locale
 
-```html
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./service-worker.js').then(function () {
-      console.log('Service Worker Registered');
-    });
-  }
-</script>
-```
+> Prérequis : Docker, Node.js 16+, Java 17+, Git
 
-Note: [Workbox](https://developers.google.com/web/tools/workbox/) powers JHipster's service worker. It dynamically generates the `service-worker.js` file.
+```bash
+# 1. Clonez le repo
+git clone https://github.com/votre-org/notabene.git
+cd notabene
 
-### Managing dependencies
+# 2. Lancez tous les services
+docker-compose up -d
 
-For example, to add [Leaflet][] library as a runtime dependency of your application, you would run following command:
-
-```
-./npmw install --save --save-exact leaflet
-```
-
-To benefit from TypeScript type definitions from [DefinitelyTyped][] repository in development, you would run following command:
-
-```
-./npmw install --save-dev --save-exact @types/leaflet
+# 3. Accès
+Frontend : http://localhost:9000
+Backend  : http://localhost:8080/api
+MongoDB  : mongodb://localhost:27017/notabene
 ```
 
-Then you would import the JS and CSS files specified in library's installation instructions so that [Vite][] knows about them:
-Note: There are still a few other things remaining to do for Leaflet that we won't detail here.
+---
 
-For further instructions on how to develop with JHipster, have a look at [Using JHipster in development][].
+## ⚙️ Configuration Docker
 
-## Building for production
-
-### Packaging as jar
-
-To build the final jar and optimize the NotaBene application for production, run:
+Structure simplifiée :
 
 ```
-./mvnw -Pprod clean verify
+/docker
+  ├── app.yml             # Docker Compose global
+  ├── mongodb.yml         # MongoDB service
+  ├── keycloak.yml        # (Optionnel) Auth externalisée
+  └── ...
 ```
 
-This will concatenate and minify the client CSS and JavaScript files. It will also modify `index.html` so it references these new files.
-To ensure everything worked, run:
+---
 
-```
-java -jar target/*.jar
-```
+## 🔁 CI/CD avec GitHub Actions
 
-Then navigate to [http://localhost:8080](http://localhost:8080) in your browser.
+Fichier `.github/workflows/main.yml`
 
-Refer to [Using JHipster in production][] for more details.
-
-### Packaging as war
-
-To package your application as a war in order to deploy it to an application server, run:
-
-```
-./mvnw -Pprod,war clean verify
-```
-
-### JHipster Control Center
-
-JHipster Control Center can help you manage and control your application(s). You can start a local control center server (accessible on http://localhost:7419) with:
-
-```
-docker compose -f src/main/docker/jhipster-control-center.yml up
-```
-
-## Testing
-
-### Spring Boot tests
-
-To launch your application's tests, run:
-
-```
-./mvnw verify
-```
-
-### Gatling
-
-Performance tests are run by [Gatling][] and written in Scala. They're located in [src/test/java/gatling/simulations](src/test/java/gatling/simulations).
-
-You can execute all Gatling tests with
-
-```
-./mvnw gatling:test
-```
-
-### Client tests
-
-Unit tests are run by [Vitest][]. They're located near components and can be run with:
-
-```
-./npmw test
-```
-
-UI end-to-end tests are powered by [Cypress][]. They're located in [src/test/javascript/cypress](src/test/javascript/cypress)
-and can be run by starting Spring Boot in one terminal (`./mvnw spring-boot:run`) and running the tests (`./npmw run e2e`) in a second one.
-
-#### Lighthouse audits
-
-You can execute automated [Lighthouse audits](https://developers.google.com/web/tools/lighthouse/) with [cypress-audit](https://github.com/mfrachet/cypress-audit) by running `./npmw run e2e:cypress:audits`.
-You should only run the audits when your application is packaged with the production profile.
-The lighthouse report is created in `target/cypress/lhreport.html`
-
-## Others
-
-### Code quality using Sonar
-
-Sonar is used to analyse code quality. You can start a local Sonar server (accessible on http://localhost:9001) with:
-
-```
-docker compose -f src/main/docker/sonar.yml up -d
-```
-
-Note: we have turned off forced authentication redirect for UI in [src/main/docker/sonar.yml](src/main/docker/sonar.yml) for out of the box experience while trying out SonarQube, for real use cases turn it back on.
-
-You can run a Sonar analysis with using the [sonar-scanner](https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner) or by using the maven plugin.
-
-Then, run a Sonar analysis:
-
-```
-./mvnw -Pprod clean verify sonar:sonar -Dsonar.login=admin -Dsonar.password=admin
-```
-
-If you need to re-run the Sonar phase, please be sure to specify at least the `initialize` phase since Sonar properties are loaded from the sonar-project.properties file.
-
-```
-./mvnw initialize sonar:sonar -Dsonar.login=admin -Dsonar.password=admin
-```
-
-Additionally, Instead of passing `sonar.password` and `sonar.login` as CLI arguments, these parameters can be configured from [sonar-project.properties](sonar-project.properties) as shown below:
-
-```
-sonar.login=admin
-sonar.password=admin
-```
-
-For more information, refer to the [Code quality page][].
-
-### Docker Compose support
-
-JHipster generates a number of Docker Compose configuration files in the [src/main/docker/](src/main/docker/) folder to launch required third party services.
-
-For example, to start required services in Docker containers, run:
-
-```
-docker compose -f src/main/docker/services.yml up -d
-```
-
-To stop and remove the containers, run:
-
-```
-docker compose -f src/main/docker/services.yml down
-```
-
-[Spring Docker Compose Integration](https://docs.spring.io/spring-boot/reference/features/dev-services.html) is enabled by default. It's possible to disable it in application.yml:
+- Compilation Maven + tests
+- Build Docker image
+- Push sur DockerHub
+- Déploiement distant (SSH ou k8s)
 
 ```yaml
-spring:
-  ...
-  docker:
-    compose:
-      enabled: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+      - run: ./mvnw verify
 ```
 
-You can also fully dockerize your application and all the services that it depends on.
-To achieve this, first build a Docker image of your app by running:
+---
 
-```sh
-npm run java:docker
+## ✅ Tests
+
+| Type              | Outil       |
+| ----------------- | ----------- |
+| Unitaires         | JUnit 5     |
+| Intégration       | Spring Test |
+| End-to-End        | Cypress     |
+| Charge (optional) | Gatling     |
+
+Tests Cypress sont exécutés automatiquement en CI + snapshot d’écran à chaque erreur.
+
+---
+
+## 🌍 Roadmap complète
+
+### 🧱 Phase 1 – Setup Technique
+
+- [x] Initialisation du projet via JHipster avec WebFlux + MongoDB + Vue 2
+- [x] Dockerisation complète
+- [x] Authentification JWT
+- [x] Génération UI admin
+- [x] Support i18n (fr/en)
+- [x] GitHub Actions de base (build + test)
+
+### ✍️ Phase 2 – Fonctionnalités Métier
+
+- [x] CRUD Note (titre, contenu, tag, user)
+- [x] Sécurité : accès restreint à ses propres notes
+- [x] Tri et recherche par mots-clés
+- [ ] Export PDF / Markdown d'une note
+- [ ] Ajout de tags dynamiques
+
+### 🔒 Phase 3 – Admin & Sécurité
+
+- [ ] Dashboard admin
+- [ ] Page analytics simple (nb de notes, utilisateurs)
+- [ ] Audit des actions critiques (connexion, suppression, etc.)
+
+### 🚀 Phase 4 – Déploiement & Monitoring
+
+- [ ] CI avancée : staging + prod
+- [ ] Intégration Prometheus + Grafana
+- [ ] Déploiement sur serveur distant / VPS
+- [ ] Sauvegarde automatique MongoDB (cron Docker)
+
+---
+
+## 📋 TODO Technique
+
+- [ ] Ajouter les tests unitaires manquants
+- [ ] Ajouter la configuration ESLint / Prettier
+- [ ] Ajouter Cucumber si tests BDD souhaités
+- [ ] Setup Volar + GitLens dans VSC
+- [ ] Ajouter script init de base MongoDB
+
+---
+
+## 🤝 Bonnes pratiques
+
+- Commits clairs avec convention (feat, fix, chore...)
+- Branches : `main`, `develop`, `feature/*`
+- Tests obligatoires avant PR
+- Docker obligatoire pour tout lancement local
+
+---
+
+## 👨‍💻 Développeurs
+
+| Nom           | Rôle               |
+| ------------- | ------------------ |
+| Toi 🧑‍💻        | Lead Dev Fullstack |
+| 🚀 À recruter | Dev frontend Vue   |
+| 🚀 À recruter | Dev backend Java   |
+
+---
+
+## 📄 Licence
+
+MIT
+
+---
+
+## 🧠 Mémos utiles
+
+```bash
+# Générer une entité JHipster
+jhipster entity Note
+
+# Lancer les tests
+./mvnw test
+
+# Lancer Cypress
+npm run e2e
 ```
-
-Or build a arm64 Docker image when using an arm64 processor os like MacOS with M1 processor family running:
-
-```sh
-npm run java:docker:arm64
-```
-
-Then run:
-
-```sh
-docker compose -f src/main/docker/app.yml up -d
-```
-
-For more information refer to [Using Docker and Docker-Compose][], this page also contains information on the Docker Compose sub-generator (`jhipster docker-compose`), which is able to generate Docker configurations for one or several JHipster applications.
-
-## Continuous Integration (optional)
-
-To configure CI for your project, run the ci-cd sub-generator (`jhipster ci-cd`), this will let you generate configuration files for a number of Continuous Integration systems. Consult the [Setting up Continuous Integration][] page for more information.
-
-[JHipster Homepage and latest documentation]: https://www.jhipster.tech
-[JHipster 8.11.0 archive]: https://www.jhipster.tech/documentation-archive/v8.11.0
-[Using JHipster in development]: https://www.jhipster.tech/documentation-archive/v8.11.0/development/
-[Using Docker and Docker-Compose]: https://www.jhipster.tech/documentation-archive/v8.11.0/docker-compose
-[Using JHipster in production]: https://www.jhipster.tech/documentation-archive/v8.11.0/production/
-[Running tests page]: https://www.jhipster.tech/documentation-archive/v8.11.0/running-tests/
-[Code quality page]: https://www.jhipster.tech/documentation-archive/v8.11.0/code-quality/
-[Setting up Continuous Integration]: https://www.jhipster.tech/documentation-archive/v8.11.0/setting-up-ci/
-[Node.js]: https://nodejs.org/
-[NPM]: https://www.npmjs.com/
-[Gatling]: https://gatling.io/
-[Cypress]: https://www.cypress.io/
-[Leaflet]: https://leafletjs.com/
-[DefinitelyTyped]: https://definitelytyped.org/
