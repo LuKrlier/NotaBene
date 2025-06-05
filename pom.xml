@@ -32,6 +32,8 @@
         <sonar.projectKey>LuKrlier_NotaBene</sonar.projectKey>
         <sonar.moduleKey>${project.artifactId}</sonar.moduleKey>
         <sonar.qualitygate.wait>true</sonar.qualitygate.wait>
+        <sonar.testExecutionReportPaths>target/test-results/TESTS-results-vitest.xml</sonar.testExecutionReportPaths>
+        <sonar.javascript.lcov.reportPaths>target/vite-coverage/lcov.info</sonar.javascript.lcov.reportPaths>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
