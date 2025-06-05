@@ -186,7 +186,7 @@ Tests Cypress sont exécutés automatiquement en CI + snapshot d’écran à cha
 | Nom           | Rôle               |
 | ------------- | ------------------ |
 | Toi 🧑‍💻        | Lead Dev Fullstack |
-| 🚀 À recruter | Dev frontend Vue   |
+| 🚀 À recruter | Dev frontend Vue 2 |
 | 🚀 À recruter | Dev backend Java   |
 
 ---
