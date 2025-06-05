@@ -48,12 +48,6 @@ jobs:
   validate:
     name: Validate and Test
     runs-on: ubuntu-latest
-    
-    services:
-      mongodb:
-        image: mongo:6.0
-        ports:
-          - 27017:27017
 
     steps:
     - uses: actions/checkout@v4
@@ -115,6 +109,7 @@ jobs:
 
     - name: Start backend server
       run: |
+        docker compose -f src/main/docker/mongodb.yml up -d
         ./mvnw -ntp -Dskip.installnodenpm -Dskip.npm spring-boot:run &
         echo "Waiting for server to start..."
         timeout 300 bash -c 'until curl -s http://localhost:8080/management/health; do sleep 5; done'
@@ -123,6 +118,11 @@ jobs:
     - name: Run e2e tests
       run: |
         npm run e2e:headless
+
+    - name: Cleanup
+      if: always()
+      run: |
+        docker compose -f src/main/docker/mongodb.yml down -v
 
     # SonarCloud analysis on both branches
     - name: SonarCloud Scan
