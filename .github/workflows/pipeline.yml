@@ -130,6 +130,18 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      with:
+        args: >
+          -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+          -Dsonar.projectKey=NotaBene
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.java.binaries=target/classes
+          -Dsonar.sources=src/main
+          -Dsonar.tests=src/test
+          -Dsonar.junit.reportPaths=target/surefire-reports,target/failsafe-reports
+          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+          -Dsonar.javascript.lcov.reportPaths=target/test-results/lcov.info
+          -Dsonar.testExecutionReportPaths=target/test-results/jest/TESTS-results-sonar.xml
 
     # Production build only on master
     - name: Production build
