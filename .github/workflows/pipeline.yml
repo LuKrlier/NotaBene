@@ -66,12 +66,15 @@ jobs:
         npm run lint
         ./mvnw checkstyle:check
 
-    - name: Run tests
+    - name: Run backend tests
       run: |
-        ./mvnw test
-        npm run test:unit
+        npm run backend:unit:test
         ./mvnw verify -Pintegration-tests
-        npm run test:integration
+
+    - name: Run frontend tests
+      run: |
+        npm run test
+        npm run e2e:cypress:headless
 
     # Security scan only on develop and master
     - name: Run security scan
