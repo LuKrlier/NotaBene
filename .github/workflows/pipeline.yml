@@ -74,7 +74,7 @@ jobs:
     - name: Run frontend tests
       run: |
         npm run test
-        npm run e2e:cypress:headless
+        npm run e2e:headless
 
     # Security scan only on develop and master
     - name: Run security scan
