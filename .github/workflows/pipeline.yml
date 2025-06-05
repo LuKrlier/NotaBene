@@ -1,0 +1,149 @@
+name: NotaBene Pipeline
+
+on:
+  pull_request:
+    branches: [develop, master]
+  push:
+    branches: [develop, master]
+
+jobs:
+  validate:
+    name: Validate and Test
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Important pour SonarQube
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Cache Maven packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Cache npm packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.npm
+          node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: ${{ runner.os }}-node-
+
+    - name: Make Maven wrapper executable
+      run: chmod +x ./mvnw
+
+    - name: Install dependencies
+      run: |
+        npm install
+        ./mvnw frontend:install-node-and-npm frontend:npm install
+
+    # Lint check only on develop branch or PRs to develop
+    - name: Check code style
+      if: github.ref == 'refs/heads/develop' || github.base_ref == 'develop'
+      run: |
+        npm run lint
+        ./mvnw checkstyle:check
+
+    - name: Run tests
+      run: |
+        ./mvnw test
+        npm run test:unit
+        ./mvnw verify -Pintegration-tests
+        npm run test:integration
+
+    # Security scan only on develop and master
+    - name: Run security scan
+      if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master'
+      uses: snyk/actions/node@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high
+
+    # SonarCloud analysis on both branches
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+    # Production build only on master
+    - name: Production build
+      if: github.ref == 'refs/heads/master'
+      run: ./mvnw clean verify -Pprod
+
+  docker:
+    needs: validate
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v4
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v4
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Set Docker tags
+      id: docker_meta
+      run: |
+        if [ "${{ github.ref }}" = "refs/heads/master" ]; then
+          echo "::set-output name=tags::${{ secrets.DOCKERHUB_USERNAME }}/notabene:latest,${{ secrets.DOCKERHUB_USERNAME }}/notabene:${{ github.sha }}"
+          echo "::set-output name=cache_from::type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/notabene:latest"
+        else
+          echo "::set-output name=tags::${{ secrets.DOCKERHUB_USERNAME }}/notabene:develop,${{ secrets.DOCKERHUB_USERNAME }}/notabene:develop-${{ github.sha }}"
+          echo "::set-output name=cache_from::type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/notabene:develop"
+        fi
+
+    - name: Build and push
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.docker_meta.outputs.tags }}
+        cache-from: ${{ steps.docker_meta.outputs.cache_from }}
+        cache-to: type=inline
+
+  notify:
+    needs: [validate, docker]
+    name: Notify on Status
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+    - name: Notify Slack
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        fields: repo,message,commit,author,action,eventName,ref,workflow
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      if: always() 
