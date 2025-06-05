@@ -140,7 +140,9 @@ jobs:
         ./mvnw -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
         -Dsonar.projectKey=LuKrlier_NotaBene \
         -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
-        -Dsonar.host.url=https://sonarcloud.io
+        -Dsonar.host.url=https://sonarcloud.io \
+        -Dsonar.testExecutionReportPaths=target/test-results/TESTS-results-vitest.xml \
+        -Dsonar.javascript.lcov.reportPaths=target/vite-coverage/lcov.info
 
     # Production build only on master
     - name: Production build
