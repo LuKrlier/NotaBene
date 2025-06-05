@@ -194,18 +194,3 @@ Tests Cypress sont exécutés automatiquement en CI + snapshot d’écran à cha
 ## 📄 Licence
 
 MIT
-
----
-
-## 🧠 Mémos utiles
-
-```bash
-# Générer une entité JHipster
-jhipster entity Note
-
-# Lancer les tests
-./mvnw test
-
-# Lancer Cypress
-npm run e2e
-```
