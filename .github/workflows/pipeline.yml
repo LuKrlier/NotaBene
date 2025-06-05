@@ -112,6 +112,16 @@ jobs:
     - name: Run frontend tests
       run: |
         npm run test
+
+    - name: Start backend server
+      run: |
+        ./mvnw -ntp -Dskip.installnodenpm -Dskip.npm spring-boot:run &
+        echo "Waiting for server to start..."
+        timeout 300 bash -c 'until curl -s http://localhost:8080/management/health; do sleep 5; done'
+        echo "Server started successfully"
+
+    - name: Run e2e tests
+      run: |
         npm run e2e:headless
 
     # SonarCloud analysis on both branches
