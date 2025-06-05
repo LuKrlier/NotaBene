@@ -124,24 +124,23 @@ jobs:
       run: |
         docker compose -f src/main/docker/mongodb.yml down -v
 
-    # SonarCloud analysis on both branches
-    - name: SonarCloud Scan
-      uses: SonarSource/sonarcloud-github-action@master
+    # SonarCloud analysis
+    - name: Cache SonarCloud packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+
+    - name: SonarCloud Analyze
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      with:
-        args: >
-          -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
-          -Dsonar.projectKey=NotaBene
-          -Dsonar.host.url=https://sonarcloud.io
-          -Dsonar.java.binaries=target/classes
-          -Dsonar.sources=src/main
-          -Dsonar.tests=src/test
-          -Dsonar.junit.reportPaths=target/surefire-reports,target/failsafe-reports
-          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-          -Dsonar.javascript.lcov.reportPaths=target/test-results/lcov.info
-          -Dsonar.testExecutionReportPaths=target/test-results/jest/TESTS-results-sonar.xml
+      run: |
+        ./mvnw -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+        -Dsonar.projectKey=LuKrlier_NotaBene \
+        -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
+        -Dsonar.host.url=https://sonarcloud.io
 
     # Production build only on master
     - name: Production build
@@ -196,16 +195,57 @@ jobs:
     - name: Notify Slack
       uses: 8398a7/action-slack@v3
       with:
-        status: ${{ job.status }}
-        fields: repo,message,commit,author,action,eventName,ref,workflow
-        text: |
-          *Repository:* ${{ github.repository }}
-          *Branch:* ${{ github.ref_name }}
-          *Status:* ${{ job.status }}
-          *Commit:* ${{ github.sha }}
-          *Author:* ${{ github.actor }}
-          
-          Pour plus de détails : ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        status: custom
+        custom_payload: |
+          {
+            "attachments": [{
+              "color": "${{ job.status == 'success' && needs.validate.result == 'success' && needs.analyze.result == 'success' && (needs.docker.result == 'success' || needs.docker.result == 'skipped') && 'good' || 'danger' }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Pipeline NotaBene - ${{ github.event_name }}*\n\n*Status:* ${{ job.status == 'success' && needs.validate.result == 'success' && needs.analyze.result == 'success' && (needs.docker.result == 'success' || needs.docker.result == 'skipped') && ':white_check_mark: Success' || ':x: Failure' }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:*\n${{ github.repository }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.head_ref || github.ref_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n${{ github.sha }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author:*\n${{ github.actor }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Jobs Status:*\n• Analyze: ${{ needs.analyze.result == 'success' && ':white_check_mark:' || ':x:' }}\n• Validate: ${{ needs.validate.result == 'success' && ':white_check_mark:' || ':x:' }}\n• Docker: ${{ needs.docker.result == 'skipped' && ':warning: Skipped' || needs.docker.result == 'success' && ':white_check_mark:' || ':x:' }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|:mag: Voir les détails de l'exécution>"
+                  }
+                }
+              ]
+            }]
+          }
       env:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       if: always() 
