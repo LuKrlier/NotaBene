@@ -1,0 +1,253 @@
+name: NotaBene Pipeline
+
+on:
+  pull_request:
+    branches: [develop, master]
+  push:
+    branches: [develop, master]
+  schedule:
+    - cron: '0 0 * * 1'  # Analyse hebdomadaire chaque lundi
+
+jobs:
+  analyze:
+    name: Security Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript', 'java']
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+
+    - name: Setup Java
+      if: matrix.language == 'java'
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{matrix.language}}"
+
+  validate:
+    name: Validate and Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Important pour SonarQube
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Cache Maven packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Cache npm packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.npm
+          node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: ${{ runner.os }}-node-
+
+    - name: Make Maven wrapper executable
+      run: chmod +x ./mvnw
+
+    - name: Install dependencies
+      run: |
+        npm install
+        ./mvnw frontend:install-node-and-npm frontend:npm install
+
+    # Lint check only on develop branch or PRs to develop
+    - name: Check code style
+      if: github.ref == 'refs/heads/develop' || github.base_ref == 'develop'
+      run: |
+        npm run lint
+        ./mvnw checkstyle:check
+
+    - name: Run backend tests
+      run: |
+        npm run backend:unit:test
+        ./mvnw verify -Pintegration-tests
+
+    - name: Run frontend tests
+      run: |
+        npm run test
+
+    - name: Start backend server
+      run: |
+        docker compose -f src/main/docker/mongodb.yml up -d
+        ./mvnw -ntp -Dskip.installnodenpm -Dskip.npm spring-boot:run &
+        echo "Waiting for server to start..."
+        timeout 300 bash -c 'until curl -s http://localhost:8080/management/health; do sleep 5; done'
+        echo "Server started successfully"
+
+    - name: Run e2e tests
+      run: |
+        npm run e2e:headless
+
+    - name: Cleanup
+      if: always()
+      run: |
+        docker compose -f src/main/docker/mongodb.yml down -v
+
+    # SonarCloud analysis
+    - name: Cache SonarCloud packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+
+    - name: SonarCloud Analyze
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: |
+        ./mvnw -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+        -Dsonar.projectKey=LuKrlier_NotaBene \
+        -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
+        -Dsonar.host.url=https://sonarcloud.io \
+        -Dsonar.testExecutionReportPaths=target/test-results/TESTS-results-vitest.xml \
+        -Dsonar.javascript.lcov.reportPaths=target/vite-coverage/lcov.info
+
+    # Production build only on master
+    - name: Production build
+      if: github.ref == 'refs/heads/master'
+      run: ./mvnw clean verify -Pprod
+
+  docker:
+    needs: [validate, analyze]
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Set Docker tags
+      id: docker_meta
+      run: |
+        if [ "${{ github.ref }}" = "refs/heads/master" ]; then
+          echo "tags=${{ secrets.DOCKERHUB_USERNAME }}/notabene:latest,${{ secrets.DOCKERHUB_USERNAME }}/notabene:${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "cache_from=type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/notabene:latest" >> $GITHUB_OUTPUT
+        else
+          echo "tags=${{ secrets.DOCKERHUB_USERNAME }}/notabene:develop,${{ secrets.DOCKERHUB_USERNAME }}/notabene:develop-${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "cache_from=type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/notabene:develop" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Build and push
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.docker_meta.outputs.tags }}
+        cache-from: ${{ steps.docker_meta.outputs.cache_from }}
+        cache-to: type=inline
+
+  notify:
+    needs: [validate, analyze, docker]
+    name: Notify Status
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+    - name: Notify Slack
+      uses: 8398a7/action-slack@v3
+      with:
+        status: custom
+        custom_payload: |
+          {
+            "attachments": [{
+              "color": "${{ job.status == 'success' && needs.validate.result == 'success' && needs.analyze.result == 'success' && (needs.docker.result == 'success' || needs.docker.result == 'skipped') && 'good' || 'danger' }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Pipeline NotaBene - ${{ github.event_name }}*\n\n*Status:* ${{ job.status == 'success' && needs.validate.result == 'success' && needs.analyze.result == 'success' && (needs.docker.result == 'success' || needs.docker.result == 'skipped') && ':white_check_mark: Success' || ':x: Failure' }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:*\n${{ github.repository }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.head_ref || github.ref_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n${{ github.sha }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author:*\n${{ github.actor }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Jobs Status:*\n• Analyze: ${{ needs.analyze.result == 'success' && ':white_check_mark:' || ':x:' }}\n• Validate: ${{ needs.validate.result == 'success' && ':white_check_mark:' || ':x:' }}\n• Docker: ${{ needs.docker.result == 'skipped' && ':warning: Skipped' || needs.docker.result == 'success' && ':white_check_mark:' || ':x:' }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|:mag: Voir les détails de l'exécution>"
+                  }
+                }
+              ]
+            }]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      if: always() 
