@@ -16,30 +16,30 @@ gantt
     Polish & Release       :2024-05-01, 30d
 ```
 
-## 🎯 Phase 1: Setup & Architecture (4 semaines)
+## 🎯 Phase 1: Setup & Architecture (4 semaines) ✅
 
-### 1.1 Infrastructure (2 semaines)
+### 1.1 Infrastructure (2 semaines) ✅
 - Branch: `feature/NOT-001-project-setup`
   ```
   develop → feature/NOT-001-project-setup → develop
   ```
 - Tasks:
-  - [ ] Setup Spring WebFlux
-  - [ ] Setup Vue.js 2 + Element UI
-  - [ ] Configuration MongoDB
-  - [ ] Docker setup
-  - [ ] CI/CD initial setup
+  - [x] Setup Spring WebFlux
+  - [x] Setup Vue.js 2 + Element UI
+  - [x] Configuration MongoDB
+  - [x] Docker setup
+  - [x] CI/CD initial setup
 
-### 1.2 Authentication (2 semaines)
+### 1.2 Authentication (2 semaines) ✅
 - Branch: `feature/NOT-002-auth-system`
   ```
   develop → feature/NOT-002-auth-system → develop
   ```
 - Tasks:
-  - [ ] JWT implementation
-  - [ ] Login/Register forms
-  - [ ] User roles (admin/user)
-  - [ ] Security configuration
+  - [x] JWT implementation
+  - [x] Login/Register forms
+  - [x] User roles (admin/user)
+  - [x] Security configuration
 
 ## 🎯 Phase 2: Core Features (6 semaines)
 
