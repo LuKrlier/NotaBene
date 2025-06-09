@@ -25,6 +25,16 @@
 
 ---
 
+## 📚 Documentation
+
+La documentation complète du projet est disponible dans le dossier [documentation](./documentation) :
+
+- [Spécifications](./documentation/specifications.md) - Spécifications fonctionnelles et techniques détaillées
+- [Roadmap](./documentation/roadmap.md) - Planning et phases du projet
+- [Phase 2 - Détails](./documentation/phase-2-details.md) - Spécifications détaillées de la Phase 2
+
+---
+
 ## 📦 Fonctionnalités
 
 ### 🔐 Authentification & Sécurité
@@ -124,7 +134,7 @@ jobs:
 | End-to-End        | Cypress     |
 | Charge (optional) | Gatling     |
 
-Tests Cypress sont exécutés automatiquement en CI + snapshot d’écran à chaque erreur.
+Tests Cypress sont exécutés automatiquement en CI + snapshot d'écran à chaque erreur.
 
 ---
 
